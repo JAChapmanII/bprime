@@ -105,7 +105,7 @@ void clearPlot() {
 	SDL_GL_SwapBuffers();
 }
 
-/* Plot dimension (width, height, resolution setters and getters {{{ */
+/* Plot dimension (width, height setters and getters {{{ */
 void setPlotWidth(int pWidth) {
 	if(pWidth < 1) return;
 	plot_Width = pWidth;
