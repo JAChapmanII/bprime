@@ -10,61 +10,79 @@
 
 char *prime = NULL;
 void generatePrimes();
+void stepLife();
 
 SDL_Surface *screen;
+Uint32 pOn, pOff;
 void initSDL();
+void drawPrimeGrid();
 
 int main(int argc, char **argv) {
-	int x = 0, y = 0;
-	Uint32 on, off, *bufp;
+	int i;
 
 	initSDL();
-
-	generatePrimes();
-
-	/*
-	for(i = 2; i < PRIME_COUNT; ++i)
-		if(prime[i])
-			printf("%d ", i);
-	printf("\n");
-	*/
-
-	on = SDL_MapRGB(screen->format, 0, 100, 255);
-	off = SDL_MapRGB(screen->format, 255, 255, 255);
-
 	if(screen->format->BytesPerPixel != 4) {
 		fprintf(stderr, "Screen not 32-bpp\n");
 		return 1;
 	}
+	printf("Initialized SDL...\n");
 
+	pOn  = SDL_MapRGB(screen->format,   0, 100, 255);
+	pOff = SDL_MapRGB(screen->format, 255, 255, 255);
+	printf("Constructed colors...\n");
 
-	if(SDL_MUSTLOCK(screen)) {
-		if(SDL_LockSurface(screen) < 0) {
-			fprintf(stderr, "Required to lock screen, but can't\n");
-			return 1;
-		}
-	}
-	for(x = 0; x < PRIME_WIDTH; ++x) {
-		for(y = 0; y < PRIME_HEIGHT; ++y) {
-			bufp = (Uint32 *)screen->pixels + y*screen->pitch/4 + x;
-			if(prime[y*PRIME_WIDTH + x]) {
-				*bufp = on;
-			} else {
-				*bufp = off;
+	generatePrimes();
+	printf("Generated initial prime set...\n");
+
+	for(i = 1; i > 0; ++i) {
+		SDL_Event event;
+		while(SDL_PollEvent(&event)) {
+			switch(event.type) {
+				case SDL_KEYDOWN:
+					switch(event.key.keysym.sym) {
+						case SDLK_RETURN: case SDLK_ESCAPE:
+							i = -1;
+							break;
+						default:
+							break;
+					}
+					break;
+				default:
+					break;
 			}
 		}
+		if(i <= 0)
+			break;
+		drawPrimeGrid();
+		SDL_Delay(100);
+		stepLife();
 	}
-	if(SDL_MUSTLOCK(screen)) {
-		SDL_UnlockSurface(screen);
-	}
-	SDL_UpdateRect(screen, 0, 0, PRIME_WIDTH, PRIME_HEIGHT);
+	printf("Broken from game loop\n");
 
 	SDL_SaveBMP(screen, "out.bmp");
-	SDL_Delay(3000);
+	printf("Saved final output\n");
 }
 
 
-void initSDL() {
+void generatePrimes() { /* {{{ */
+	int i, j;
+	if(prime != NULL)
+		return;
+
+	prime = malloc(PRIME_COUNT);
+	memset(prime, 1, PRIME_COUNT);
+
+	for(i = 2; i < PRIME_COUNT; ++i) {
+		if(!prime[i])
+			continue;
+		for(j = i << 1; j < PRIME_COUNT; j += i)
+			prime[j] = 0;
+	}
+} /* }}} */
+void stepLife() { /* {{{ */
+} /* }}} */
+
+void initSDL() { /* {{{ */
 	const SDL_VideoInfo *videoInfo;
 	int videoFlags;
 	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -95,22 +113,26 @@ void initSDL() {
 		fprintf(stderr, "Unable to create plot screen: %s\n", SDL_GetError());
 		exit(1);
 	}
-}
+} /* }}} */
+void drawPrimeGrid() { /* {{{ */
+	int x, y;
+	Uint32 *bufp;
 
-void generatePrimes() {
-	int i, j;
-	if(prime != NULL)
-		return;
-
-	prime = malloc(PRIME_COUNT);
-	memset(prime, 1, PRIME_COUNT);
-
-	for(i = 2; i < PRIME_COUNT; ++i) {
-		if(!prime[i])
-			continue;
-		for(j = i << 1; j < PRIME_COUNT; j += i)
-			prime[j] = 0;
+	if(SDL_MUSTLOCK(screen)) {
+		if(SDL_LockSurface(screen) < 0) {
+			fprintf(stderr, "Required to lock screen, but can't\n");
+			exit(1);
+		}
 	}
-}
-
+	for(x = 0; x < PRIME_WIDTH; ++x) {
+		for(y = 0; y < PRIME_HEIGHT; ++y) {
+			bufp = (Uint32 *)screen->pixels + y*screen->pitch/4 + x;
+			*bufp = (prime[y*PRIME_WIDTH + x]) ? pOn : pOff;
+		}
+	}
+	if(SDL_MUSTLOCK(screen)) {
+		SDL_UnlockSurface(screen);
+	}
+	SDL_UpdateRect(screen, 0, 0, PRIME_WIDTH, PRIME_HEIGHT);
+} /* }}} */
 
