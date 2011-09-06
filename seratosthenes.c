@@ -3,8 +3,8 @@
 #include <string.h>
 #include <SDL/SDL.h>
 
-#define PRIME_WIDTH  600
-#define PRIME_HEIGHT 600
+#define PRIME_WIDTH  1920
+#define PRIME_HEIGHT 1080
 #define PRIME_COUNT PRIME_WIDTH*PRIME_HEIGHT
 
 char *prime = NULL;
