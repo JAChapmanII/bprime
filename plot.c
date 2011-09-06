@@ -77,7 +77,7 @@ int plot_Resize() {
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 
-	glOrtho(0, plot_Width, 0, plot_Height, 0, 1);
+	glOrtho(0, plot_Width, plot_Height, 0, 0, 1);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
