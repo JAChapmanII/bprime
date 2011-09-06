@@ -6,6 +6,7 @@
 #define PRIME_WIDTH  1920
 #define PRIME_HEIGHT 1080
 #define PRIME_COUNT PRIME_WIDTH*PRIME_HEIGHT
+#define TORODIAL_WORLD 1
 
 char *prime = NULL;
 void generatePrimes();
@@ -37,9 +38,10 @@ int main(int argc, char **argv) {
 	}
 
 
-	if ( SDL_MUSTLOCK(screen) ) {
-		if ( SDL_LockSurface(screen) < 0 ) {
-			return 0;
+	if(SDL_MUSTLOCK(screen)) {
+		if(SDL_LockSurface(screen) < 0) {
+			fprintf(stderr, "Required to lock screen, but can't\n");
+			return 1;
 		}
 	}
 	for(x = 0; x < PRIME_WIDTH; ++x) {
@@ -52,7 +54,7 @@ int main(int argc, char **argv) {
 			}
 		}
 	}
-	if ( SDL_MUSTLOCK(screen) ) {
+	if(SDL_MUSTLOCK(screen)) {
 		SDL_UnlockSurface(screen);
 	}
 	SDL_UpdateRect(screen, 0, 0, PRIME_WIDTH, PRIME_HEIGHT);
