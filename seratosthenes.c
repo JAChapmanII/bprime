@@ -3,8 +3,8 @@
 #include <string.h>
 #include <SDL/SDL.h>
 
-#define PRIME_WIDTH  1920
-#define PRIME_HEIGHT 1080
+#define PRIME_WIDTH  1001
+#define PRIME_HEIGHT 1001
 #define PRIME_COUNT PRIME_WIDTH*PRIME_HEIGHT
 #define TORODIAL_WORLD 0
 
@@ -33,6 +33,9 @@ int main(int argc, char **argv) {
 
 	generatePrimes();
 	printf("Generated initial prime set...\n");
+
+	drawPrimeGrid();
+	SDL_Delay(1000);
 
 	for(i = 1; i > 0; ++i) {
 		SDL_Event event;
