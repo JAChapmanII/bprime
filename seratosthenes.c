@@ -6,11 +6,11 @@
 #define PRIME_WIDTH  1920
 #define PRIME_HEIGHT 1080
 #define PRIME_COUNT PRIME_WIDTH*PRIME_HEIGHT
-#define TORODIAL_WORLD 1
+#define TORODIAL_WORLD 0
 
-char *prime = NULL;
+char *prime = NULL, *new = NULL, *tmp;
 void generatePrimes();
-void stepLife();
+int stepLife();
 
 SDL_Surface *screen;
 Uint32 pOn, pOff;
@@ -18,7 +18,7 @@ void initSDL();
 void drawPrimeGrid();
 
 int main(int argc, char **argv) {
-	int i;
+	int i, tAN;
 
 	initSDL();
 	if(screen->format->BytesPerPixel != 4) {
@@ -54,8 +54,10 @@ int main(int argc, char **argv) {
 		if(i <= 0)
 			break;
 		drawPrimeGrid();
-		SDL_Delay(100);
-		stepLife();
+		SDL_Delay(300);
+		tAN = stepLife();
+		if(tAN == 0)
+			i = -1;
 	}
 	printf("Broken from game loop\n");
 
@@ -70,6 +72,11 @@ void generatePrimes() { /* {{{ */
 		return;
 
 	prime = malloc(PRIME_COUNT);
+	new   = malloc(PRIME_COUNT);
+	if(!prime || !new) {
+		fprintf(stderr, "Could not allocate enough memory\n");
+		exit(1);
+	}
 	memset(prime, 1, PRIME_COUNT);
 
 	for(i = 2; i < PRIME_COUNT; ++i) {
@@ -79,7 +86,55 @@ void generatePrimes() { /* {{{ */
 			prime[j] = 0;
 	}
 } /* }}} */
-void stepLife() { /* {{{ */
+int stepLife() { /* {{{ */
+	int aliveCount, x, y, cx, cy, totalAliveNow = 0;
+	for(x = 0; x < PRIME_WIDTH; ++x) {
+		for(y = 0; y < PRIME_HEIGHT; ++y) {
+			aliveCount = 0;
+
+			/* Up neighbor */
+			cx = x;
+			cy = y - 1;
+			if(TORODIAL_WORLD && cy < 0)
+				cy = PRIME_HEIGHT - 1;
+			if(cy >= 0)
+				aliveCount += prime[cy*PRIME_WIDTH + cx];
+
+			/* Down neighbor */
+			cx = x;
+			cy = y + 1;
+			if(TORODIAL_WORLD && cy >= PRIME_HEIGHT)
+				cy = 0;
+			if(cy < PRIME_HEIGHT)
+				aliveCount += prime[cy*PRIME_WIDTH + cx];
+
+			/* Left neighbor */
+			cx = x - 1;
+			cy = y;
+			if(TORODIAL_WORLD && cx < 0)
+				cx = PRIME_WIDTH - 1;
+			if(cx >= 0)
+				aliveCount += prime[cy*PRIME_WIDTH + cx];
+
+			/* Right neighbor */
+			cx = x + 1;
+			cy = y;
+			if(TORODIAL_WORLD && cx >= PRIME_WIDTH)
+				cy = 0;
+			if(cx < PRIME_WIDTH)
+				aliveCount += prime[cy*PRIME_WIDTH + cx];
+
+			new[y*PRIME_WIDTH + x] = 0;
+			if(prime[y*PRIME_WIDTH + x] && (aliveCount == 2) || (aliveCount == 3))
+				new[y*PRIME_WIDTH + x] = 1, totalAliveNow++;
+			if(!prime[y*PRIME_WIDTH + x] && (aliveCount == 3))
+				new[y*PRIME_WIDTH + x] = 1, totalAliveNow++;
+		}
+	}
+	tmp = prime;
+	prime = new;
+	new = tmp;
+	return totalAliveNow;
 } /* }}} */
 
 void initSDL() { /* {{{ */
