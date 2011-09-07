@@ -5,10 +5,24 @@
 
 #define PRIME_WIDTH  768
 #define PRIME_HEIGHT 768
-#define PRIME_COUNT PRIME_WIDTH*PRIME_HEIGHT
+#define PRIME_COUNT (PRIME_WIDTH*PRIME_HEIGHT)
+#define MEM_REQUIREMENT (PRIME_COUNT >> 3)
 #define TORODIAL_WORLD 1
 
+
 char *prime = NULL, *new = NULL, *tmp;
+
+int isPrime(char *p, int x) {
+	return (p[x >> 3] & (0x1 << (x % 8))) >> (x % 8);
+}
+void setPrime(char *p, int x) {
+	p[x >> 3] |= (0x1 << (x % 8));
+}
+void setNotPrime(char *p, int x) {
+	if(isPrime(p, x))
+		p[x >> 3] -= (0x1 << (x % 8));
+}
+
 int generatePrimes();
 void writePrimes();
 int stepLife();
@@ -35,6 +49,11 @@ int main(int argc, char **argv) {
 	pCount = generatePrimes();
 	printf("Generated initial prime set...\n");
 	printf("%d out of %d numbers were prime\n", pCount, PRIME_COUNT);
+
+	for(i = 0; i < PRIME_COUNT; ++i)
+		if(isPrime(prime, i))
+			printf("%d ", i);
+	printf("\n");
 
 	writePrimes();
 	printf("Saved prime grid to primes.rle\n");
@@ -79,20 +98,21 @@ int generatePrimes() { /* {{{ */
 	if(prime != NULL)
 		return;
 
-	prime = malloc(PRIME_COUNT);
-	new   = malloc(PRIME_COUNT);
+	prime = malloc(MEM_REQUIREMENT);
+	new   = malloc(MEM_REQUIREMENT);
 	if(!prime || !new) {
 		fprintf(stderr, "Could not allocate enough memory\n");
 		exit(1);
 	}
-	memset(prime, 1, PRIME_COUNT);
+	for(i = 0; i < PRIME_COUNT; ++i)
+		setPrime(prime, i);
 
 	for(i = 2; i < PRIME_COUNT; ++i) {
-		if(!prime[i])
+		if(!isPrime(prime, i))
 			continue;
 		pCount++;
-		for(j = i << 1; j < PRIME_COUNT; j += i)
-			prime[j] = 0;
+		for(j = i * 2; j < PRIME_COUNT; j += i)
+			setNotPrime(prime, j);
 	}
 } /* }}} */
 void writePrimes() { /* {{{ */
@@ -106,10 +126,10 @@ void writePrimes() { /* {{{ */
 	fprintf(f, "x = %d, y = %d, rule = B3/S23\n", PRIME_WIDTH, PRIME_HEIGHT);
 	for(y = 0; y < PRIME_HEIGHT; ++y) {
 		for(x = 0; x < PRIME_WIDTH; ++x) {
-			on = prime[y*PRIME_WIDTH + x];
-			for(cnt = 0; (x < PRIME_WIDTH) && (prime[y*PRIME_WIDTH + x] == on); ++x)
+			on = isPrime(prime, y*PRIME_WIDTH + x);
+			for(cnt = 0; (x < PRIME_WIDTH) && (isPrime(prime, y*PRIME_WIDTH + x) == on); ++x)
 				cnt++;
-			if(!((x == PRIME_WIDTH - 1) && (prime[y*PRIME_WIDTH + PRIME_WIDTH] == on)))
+			if((x != PRIME_WIDTH - 1) || (isPrime(prime, y*PRIME_WIDTH + PRIME_WIDTH) != on))
 				--x;
 			if(cnt > 1)
 				fprintf(f, "%d%c", cnt, (on) ? 'o' : 'b');
@@ -134,7 +154,7 @@ int stepLife() { /* {{{ */
 			if(TORODIAL_WORLD && cy < 0)
 				cy = PRIME_HEIGHT - 1;
 			if(cy >= 0)
-				aliveCount += prime[cy*PRIME_WIDTH + cx];
+				aliveCount += isPrime(prime, cy*PRIME_WIDTH + cx);
 
 			/* Down neighbor */
 			cx = x;
@@ -142,7 +162,7 @@ int stepLife() { /* {{{ */
 			if(TORODIAL_WORLD && cy >= PRIME_HEIGHT)
 				cy = 0;
 			if(cy < PRIME_HEIGHT)
-				aliveCount += prime[cy*PRIME_WIDTH + cx];
+				aliveCount += isPrime(prime, cy*PRIME_WIDTH + cx);
 
 			/* Left neighbor */
 			cx = x - 1;
@@ -150,7 +170,7 @@ int stepLife() { /* {{{ */
 			if(TORODIAL_WORLD && cx < 0)
 				cx = PRIME_WIDTH - 1;
 			if(cx >= 0)
-				aliveCount += prime[cy*PRIME_WIDTH + cx];
+				aliveCount += isPrime(prime, cy*PRIME_WIDTH + cx);
 
 			/* Right neighbor */
 			cx = x + 1;
@@ -158,7 +178,7 @@ int stepLife() { /* {{{ */
 			if(TORODIAL_WORLD && cx >= PRIME_WIDTH)
 				cx = 0;
 			if(cx < PRIME_WIDTH)
-				aliveCount += prime[cy*PRIME_WIDTH + cx];
+				aliveCount += isPrime(prime, cy*PRIME_WIDTH + cx);
 
 			/* Up left neighbor */
 			cx = x - 1;
@@ -168,7 +188,7 @@ int stepLife() { /* {{{ */
 			if(TORODIAL_WORLD && cy < 0)
 				cy = PRIME_HEIGHT - 1;
 			if((cx >= 0) && (cy >= 0))
-				aliveCount += prime[cy*PRIME_WIDTH + cx];
+				aliveCount += isPrime(prime, cy*PRIME_WIDTH + cx);
 
 			/* Up right neighbor */
 			cx = x + 1;
@@ -178,7 +198,7 @@ int stepLife() { /* {{{ */
 			if(TORODIAL_WORLD && cy < 0)
 				cy = PRIME_HEIGHT - 1;
 			if((cx < PRIME_HEIGHT) && (cy >= 0))
-				aliveCount += prime[cy*PRIME_WIDTH + cx];
+				aliveCount += isPrime(prime, cy*PRIME_WIDTH + cx);
 
 			/* Down left neighbor */
 			cx = x - 1;
@@ -188,7 +208,7 @@ int stepLife() { /* {{{ */
 			if(TORODIAL_WORLD && cy >= PRIME_HEIGHT)
 				cy = 0;
 			if((cx >= 0) && (cy < PRIME_HEIGHT))
-				aliveCount += prime[cy*PRIME_WIDTH + cx];
+				aliveCount += isPrime(prime, cy*PRIME_WIDTH + cx);
 
 			/* Down right neighbor */
 			cx = x + 1;
@@ -198,13 +218,16 @@ int stepLife() { /* {{{ */
 			if(TORODIAL_WORLD && cy >= PRIME_HEIGHT)
 				cy = 0;
 			if((cx < PRIME_WIDTH) && (cy < PRIME_HEIGHT))
-				aliveCount += prime[cy*PRIME_WIDTH + cx];
+				aliveCount += isPrime(prime, cy*PRIME_WIDTH + cx);
 
-			new[y*PRIME_WIDTH + x] = 0;
-			if(prime[y*PRIME_WIDTH + x] && (aliveCount == 2) || (aliveCount == 3))
-				new[y*PRIME_WIDTH + x] = 1, totalAliveNow++;
-			if(!prime[y*PRIME_WIDTH + x] && (aliveCount == 3))
-				new[y*PRIME_WIDTH + x] = 1, totalAliveNow++;
+			setNotPrime(new, y*PRIME_WIDTH + x);
+			if(isPrime(prime, y*PRIME_WIDTH + x) &&
+					(aliveCount == 2) || (aliveCount == 3))
+				setPrime(new, y*PRIME_WIDTH + x);
+			if(!isPrime(prime, y*PRIME_WIDTH + x) && (aliveCount == 3))
+				setPrime(new, y*PRIME_WIDTH + x);
+			if(isPrime(new, y*PRIME_WIDTH + x))
+				totalAliveNow++;
 		}
 	}
 	tmp = prime;
@@ -258,7 +281,7 @@ void drawPrimeGrid() { /* {{{ */
 	for(x = 0; x < PRIME_WIDTH; ++x) {
 		for(y = 0; y < PRIME_HEIGHT; ++y) {
 			bufp = (Uint32 *)screen->pixels + y*screen->pitch/4 + x;
-			*bufp = (prime[y*PRIME_WIDTH + x]) ? pOn : pOff;
+			*bufp = (isPrime(prime, y*PRIME_WIDTH + x)) ? pOn : pOff;
 		}
 	}
 	if(SDL_MUSTLOCK(screen)) {
