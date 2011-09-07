@@ -50,11 +50,6 @@ int main(int argc, char **argv) {
 	printf("Generated initial prime set...\n");
 	printf("%d out of %d numbers were prime\n", pCount, PRIME_COUNT);
 
-	for(i = 0; i < PRIME_COUNT; ++i)
-		if(isPrime(prime, i))
-			printf("%d ", i);
-	printf("\n");
-
 	writePrimes();
 	printf("Saved prime grid to primes.rle\n");
 
