@@ -3,13 +3,14 @@
 #include <string.h>
 #include <SDL/SDL.h>
 
-#define PRIME_WIDTH  1001
-#define PRIME_HEIGHT 1001
+#define PRIME_WIDTH  768
+#define PRIME_HEIGHT 768
 #define PRIME_COUNT PRIME_WIDTH*PRIME_HEIGHT
 #define TORODIAL_WORLD 1
 
 char *prime = NULL, *new = NULL, *tmp;
-void generatePrimes();
+int generatePrimes();
+void writePrimes();
 int stepLife();
 
 SDL_Surface *screen;
@@ -18,7 +19,7 @@ void initSDL();
 void drawPrimeGrid();
 
 int main(int argc, char **argv) {
-	int i, tAN;
+	int i, tAN, pCount;
 
 	initSDL();
 	if(screen->format->BytesPerPixel != 4) {
@@ -31,8 +32,12 @@ int main(int argc, char **argv) {
 	pOff = SDL_MapRGB(screen->format, 255, 255, 255);
 	printf("Constructed colors...\n");
 
-	generatePrimes();
+	pCount = generatePrimes();
 	printf("Generated initial prime set...\n");
+	printf("%d out of %d numbers were prime\n", pCount, PRIME_COUNT);
+
+	writePrimes();
+	printf("Saved prime grid to prime.out\n");
 
 	drawPrimeGrid();
 	SDL_Delay(1000);
@@ -57,7 +62,7 @@ int main(int argc, char **argv) {
 		if(i <= 0)
 			break;
 		drawPrimeGrid();
-		SDL_Delay(1000);
+		/*SDL_Delay(333);*/
 		tAN = stepLife();
 		if(tAN == 0)
 			i = -1;
@@ -69,8 +74,8 @@ int main(int argc, char **argv) {
 }
 
 
-void generatePrimes() { /* {{{ */
-	int i, j;
+int generatePrimes() { /* {{{ */
+	int i, j, pCount = 0;
 	if(prime != NULL)
 		return;
 
@@ -85,9 +90,37 @@ void generatePrimes() { /* {{{ */
 	for(i = 2; i < PRIME_COUNT; ++i) {
 		if(!prime[i])
 			continue;
+		pCount++;
 		for(j = i << 1; j < PRIME_COUNT; j += i)
 			prime[j] = 0;
 	}
+} /* }}} */
+void writePrimes() { /* {{{ */
+	int x, y, cnt, on;
+	FILE *f = fopen("primes.out", "w");
+	if(!f) {
+		fprintf(stderr, "Could not open primes.out for writing\n");
+		return;
+	}
+
+	fprintf(f, "x = %d, y = %d, rule = B3/S23\n", PRIME_WIDTH, PRIME_HEIGHT);
+	for(y = 0; y < PRIME_HEIGHT; ++y) {
+		for(x = 0; x < PRIME_WIDTH; ++x) {
+			on = prime[y*PRIME_WIDTH + x];
+			for(cnt = 0; (x < PRIME_WIDTH) && (prime[y*PRIME_WIDTH + x] == on); ++x)
+				cnt++;
+			if(!((x == PRIME_WIDTH - 1) && (prime[y*PRIME_WIDTH + PRIME_WIDTH] == on)))
+				--x;
+			if(cnt > 1)
+				fprintf(f, "%d%c", cnt, (on) ? 'o' : 'b');
+			else
+				fprintf(f, "%c", (on) ? 'o' : 'b');
+		}
+		fprintf(f, "$");
+	}
+	fprintf(f, "!\n");
+
+	fclose(f);
 } /* }}} */
 int stepLife() { /* {{{ */
 	int aliveCount, x, y, cx, cy, totalAliveNow = 0;
