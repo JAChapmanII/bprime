@@ -6,7 +6,7 @@
 #define PRIME_WIDTH  1001
 #define PRIME_HEIGHT 1001
 #define PRIME_COUNT PRIME_WIDTH*PRIME_HEIGHT
-#define TORODIAL_WORLD 0
+#define TORODIAL_WORLD 1
 
 char *prime = NULL, *new = NULL, *tmp;
 void generatePrimes();
@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
 		if(i <= 0)
 			break;
 		drawPrimeGrid();
-		SDL_Delay(300);
+		SDL_Delay(1000);
 		tAN = stepLife();
 		if(tAN == 0)
 			i = -1;
@@ -123,8 +123,48 @@ int stepLife() { /* {{{ */
 			cx = x + 1;
 			cy = y;
 			if(TORODIAL_WORLD && cx >= PRIME_WIDTH)
-				cy = 0;
+				cx = 0;
 			if(cx < PRIME_WIDTH)
+				aliveCount += prime[cy*PRIME_WIDTH + cx];
+
+			/* Up left neighbor */
+			cx = x - 1;
+			cy = y - 1;
+			if(TORODIAL_WORLD && cx < 0)
+				cx = PRIME_WIDTH - 1;
+			if(TORODIAL_WORLD && cy < 0)
+				cy = PRIME_HEIGHT - 1;
+			if((cx >= 0) && (cy >= 0))
+				aliveCount += prime[cy*PRIME_WIDTH + cx];
+
+			/* Up right neighbor */
+			cx = x + 1;
+			cy = y - 1;
+			if(TORODIAL_WORLD && cx >= PRIME_WIDTH)
+				cx = 0;
+			if(TORODIAL_WORLD && cy < 0)
+				cy = PRIME_HEIGHT - 1;
+			if((cx < PRIME_HEIGHT) && (cy >= 0))
+				aliveCount += prime[cy*PRIME_WIDTH + cx];
+
+			/* Down left neighbor */
+			cx = x - 1;
+			cy = y + 1;
+			if(TORODIAL_WORLD && cx < 0)
+				cx = PRIME_WIDTH - 1;
+			if(TORODIAL_WORLD && cy >= PRIME_HEIGHT)
+				cy = 0;
+			if((cx >= 0) && (cy < PRIME_HEIGHT))
+				aliveCount += prime[cy*PRIME_WIDTH + cx];
+
+			/* Down right neighbor */
+			cx = x + 1;
+			cy = y + 1;
+			if(TORODIAL_WORLD && cx >= PRIME_WIDTH)
+				cx = 0;
+			if(TORODIAL_WORLD && cy >= PRIME_HEIGHT)
+				cy = 0;
+			if((cx < PRIME_WIDTH) && (cy < PRIME_HEIGHT))
 				aliveCount += prime[cy*PRIME_WIDTH + cx];
 
 			new[y*PRIME_WIDTH + x] = 0;
