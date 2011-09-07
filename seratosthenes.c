@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
 	printf("%d out of %d numbers were prime\n", pCount, PRIME_COUNT);
 
 	writePrimes();
-	printf("Saved prime grid to prime.out\n");
+	printf("Saved prime grid to primes.rle\n");
 
 	drawPrimeGrid();
 	SDL_Delay(1000);
@@ -97,9 +97,9 @@ int generatePrimes() { /* {{{ */
 } /* }}} */
 void writePrimes() { /* {{{ */
 	int x, y, cnt, on;
-	FILE *f = fopen("primes.out", "w");
+	FILE *f = fopen("primes.rle", "w");
 	if(!f) {
-		fprintf(stderr, "Could not open primes.out for writing\n");
+		fprintf(stderr, "Could not open primes.rle for writing\n");
 		return;
 	}
 
