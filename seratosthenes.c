@@ -1,17 +1,25 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <stdint.h>
 #include <SDL/SDL.h>
 
-#define PRIME_WIDTH  768
-#define PRIME_HEIGHT 768
-#define PRIME_COUNT (PRIME_WIDTH*PRIME_HEIGHT)
-#define MEM_REQUIREMENT (PRIME_COUNT >> 3)
-#define TORODIAL_WORLD 1
+uint32_t PRIME_WIDTH;
+uint32_t PRIME_HEIGHT;
+uint32_t PRIME_COUNT;
+uint32_t MEM_REQUIREMENT;
+char TORODIAL_WORLD;
 
+void setupConstants(uint32_t width, uint32_t heigth, char torodial) {
+	PRIME_WIDTH  = width;
+	PRIME_HEIGHT = heigth;
+	PRIME_COUNT  = (PRIME_WIDTH*PRIME_HEIGHT);
+	MEM_REQUIREMENT = ((PRIME_COUNT + 7) >> 3);
+	TORODIAL_WORLD = torodial;
+}
 
 char *prime = NULL, *new = NULL, *tmp;
 
+/* Functions to check/set/clear "prime"-ness {{{ */
 int isPrime(char *p, int x) {
 	return (p[x >> 3] & (0x1 << (x % 8))) >> (x % 8);
 }
@@ -21,7 +29,7 @@ void setPrime(char *p, int x) {
 void setNotPrime(char *p, int x) {
 	if(isPrime(p, x))
 		p[x >> 3] -= (0x1 << (x % 8));
-}
+} /* }}} */
 
 int generatePrimes();
 void writePrimes();
@@ -33,7 +41,11 @@ void initSDL();
 void drawPrimeGrid();
 
 int main(int argc, char **argv) {
-	int i, tAN, pCount;
+	int i, tAN, pCount, width, height, torodial;
+	width = height = 768;
+	torodial = 1;
+
+	setupConstants(width, height, torodial);
 
 	initSDL();
 	if(screen->format->BytesPerPixel != 4) {
@@ -57,6 +69,7 @@ int main(int argc, char **argv) {
 	SDL_Delay(1000);
 
 	for(i = 1; i > 0; ++i) {
+		/* See if enter or escape was pressed {{{ */
 		SDL_Event event;
 		while(SDL_PollEvent(&event)) {
 			switch(event.type) {
@@ -72,7 +85,8 @@ int main(int argc, char **argv) {
 				default:
 					break;
 			}
-		}
+		} /* }}} */
+		/* If enter/escape was pressed, abort */
 		if(i <= 0)
 			break;
 		drawPrimeGrid();
@@ -89,7 +103,7 @@ int main(int argc, char **argv) {
 
 
 int generatePrimes() { /* {{{ */
-	int i, j, pCount = 0;
+	uint32_t i, j, pCount = 0;
 	if(prime != NULL)
 		return;
 
@@ -111,7 +125,8 @@ int generatePrimes() { /* {{{ */
 	}
 } /* }}} */
 void writePrimes() { /* {{{ */
-	int x, y, cnt, on;
+	uint32_t x, y, cnt;
+	char on;
 	FILE *f = fopen("primes.rle", "w");
 	if(!f) {
 		fprintf(stderr, "Could not open primes.rle for writing\n");
@@ -138,82 +153,79 @@ void writePrimes() { /* {{{ */
 	fclose(f);
 } /* }}} */
 int stepLife() { /* {{{ */
-	int aliveCount, x, y, cx, cy, totalAliveNow = 0;
+	uint32_t aliveCount, x, y, cx, cy;
+	char totalAliveNow = 0;
 	for(x = 0; x < PRIME_WIDTH; ++x) {
 		for(y = 0; y < PRIME_HEIGHT; ++y) {
 			aliveCount = 0;
 
-			/* Up neighbor */
 			cx = x;
+			/* Up neighbor */
 			cy = y - 1;
-			if(TORODIAL_WORLD && cy < 0)
+			if(TORODIAL_WORLD && y == 0)
 				cy = PRIME_HEIGHT - 1;
-			if(cy >= 0)
+			if(TORODIAL_WORLD || y != 0)
 				aliveCount += isPrime(prime, cy*PRIME_WIDTH + cx);
 
 			/* Down neighbor */
-			cx = x;
 			cy = y + 1;
 			if(TORODIAL_WORLD && cy >= PRIME_HEIGHT)
 				cy = 0;
 			if(cy < PRIME_HEIGHT)
 				aliveCount += isPrime(prime, cy*PRIME_WIDTH + cx);
 
+			cy = y;
 			/* Left neighbor */
 			cx = x - 1;
-			cy = y;
-			if(TORODIAL_WORLD && cx < 0)
+			if(TORODIAL_WORLD && x == 0)
 				cx = PRIME_WIDTH - 1;
-			if(cx >= 0)
+			if(TORODIAL_WORLD || x != 0)
 				aliveCount += isPrime(prime, cy*PRIME_WIDTH + cx);
 
 			/* Right neighbor */
 			cx = x + 1;
-			cy = y;
 			if(TORODIAL_WORLD && cx >= PRIME_WIDTH)
 				cx = 0;
 			if(cx < PRIME_WIDTH)
 				aliveCount += isPrime(prime, cy*PRIME_WIDTH + cx);
 
-			/* Up left neighbor */
-			cx = x - 1;
 			cy = y - 1;
-			if(TORODIAL_WORLD && cx < 0)
-				cx = PRIME_WIDTH - 1;
-			if(TORODIAL_WORLD && cy < 0)
+			if(TORODIAL_WORLD && y == 0)
 				cy = PRIME_HEIGHT - 1;
-			if((cx >= 0) && (cy >= 0))
-				aliveCount += isPrime(prime, cy*PRIME_WIDTH + cx);
+			if(TORODIAL_WORLD || y != 0) {
+				/* Up left neighbor */
+				cx = x - 1;
+				if(TORODIAL_WORLD && x == 0)
+					cx = PRIME_WIDTH - 1;
+				if(TORODIAL_WORLD || x != 0)
+					aliveCount += isPrime(prime, cy*PRIME_WIDTH + cx);
 
-			/* Up right neighbor */
-			cx = x + 1;
-			cy = y - 1;
-			if(TORODIAL_WORLD && cx >= PRIME_WIDTH)
-				cx = 0;
-			if(TORODIAL_WORLD && cy < 0)
-				cy = PRIME_HEIGHT - 1;
-			if((cx < PRIME_HEIGHT) && (cy >= 0))
-				aliveCount += isPrime(prime, cy*PRIME_WIDTH + cx);
+				/* Up right neighbor */
+				cx = x + 1;
+				if(TORODIAL_WORLD && cx >= PRIME_WIDTH)
+					cx = 0;
+				if(cx < PRIME_WIDTH)
+					aliveCount += isPrime(prime, cy*PRIME_WIDTH + cx);
+			}
 
-			/* Down left neighbor */
-			cx = x - 1;
 			cy = y + 1;
-			if(TORODIAL_WORLD && cx < 0)
-				cx = PRIME_WIDTH - 1;
 			if(TORODIAL_WORLD && cy >= PRIME_HEIGHT)
 				cy = 0;
-			if((cx >= 0) && (cy < PRIME_HEIGHT))
-				aliveCount += isPrime(prime, cy*PRIME_WIDTH + cx);
+			if(cy < PRIME_HEIGHT) {
+				/* Down left neighbor */
+				cx = x - 1;
+				if(TORODIAL_WORLD && x == 0)
+					cx = PRIME_WIDTH - 1;
+				if(TORODIAL_WORLD || x != 0)
+					aliveCount += isPrime(prime, cy*PRIME_WIDTH + cx);
 
-			/* Down right neighbor */
-			cx = x + 1;
-			cy = y + 1;
-			if(TORODIAL_WORLD && cx >= PRIME_WIDTH)
-				cx = 0;
-			if(TORODIAL_WORLD && cy >= PRIME_HEIGHT)
-				cy = 0;
-			if((cx < PRIME_WIDTH) && (cy < PRIME_HEIGHT))
-				aliveCount += isPrime(prime, cy*PRIME_WIDTH + cx);
+				/* Down right neighbor */
+				cx = x + 1;
+				if(TORODIAL_WORLD && cx >= PRIME_WIDTH)
+					cx = 0;
+				if(cx < PRIME_WIDTH)
+					aliveCount += isPrime(prime, cy*PRIME_WIDTH + cx);
+			}
 
 			setNotPrime(new, y*PRIME_WIDTH + x);
 			if(isPrime(prime, y*PRIME_WIDTH + x) &&
@@ -264,8 +276,7 @@ void initSDL() { /* {{{ */
 	}
 } /* }}} */
 void drawPrimeGrid() { /* {{{ */
-	int x, y;
-	Uint32 *bufp;
+	uint32_t x, y, *bufp;
 
 	if(SDL_MUSTLOCK(screen)) {
 		if(SDL_LockSurface(screen) < 0) {
