@@ -91,6 +91,7 @@ int main(int argc, char **argv) {
 				case SDL_KEYDOWN:
 					switch(event.key.keysym.sym) {
 						case SDLK_RETURN: case SDLK_ESCAPE:
+							printf("We recieved key input saying to stop.\n");
 							i = -1;
 							break;
 						default:
@@ -107,8 +108,10 @@ int main(int argc, char **argv) {
 		drawPrimeGrid();
 		/*SDL_Delay(333);*/
 		tAN = stepLife();
-		if(tAN == 0)
+		if(tAN == 0) {
+			printf("All life is dead.\n");
 			i = -1;
+		}
 	}
 	printf("Broken from game loop\n");
 
@@ -168,8 +171,8 @@ void writePrimes() { /* {{{ */
 	fclose(f);
 } /* }}} */
 int stepLife() { /* {{{ */
-	uint32_t aliveCount, x, y, cx, cy;
-	char totalAliveNow = 0;
+	uint32_t x, y, cx, cy, totalAliveNow = 0;
+	char aliveCount;
 	for(x = 0; x < PRIME_WIDTH; ++x) {
 		for(y = 0; y < PRIME_HEIGHT; ++y) {
 			aliveCount = 0;
