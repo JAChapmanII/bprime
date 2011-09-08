@@ -1,5 +1,5 @@
-LDFLAGS=-lm `sdl-config --libs` -lGL
-CFLAGS=-pedantic -ansi -Wall -Wextra `sdl-config --cflags`
+LDFLAGS=
+CFLAGS=-pedantic -ansi -Wall -Wextra
 
 seratosthenes: seratosthenes.o
 	$(CC) -o $@ $^ $(LDFLAGS)
