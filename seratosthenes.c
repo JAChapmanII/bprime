@@ -140,6 +140,7 @@ int generatePrimes() { /* {{{ */
 		for(j = i * 2; j < PRIME_COUNT; j += i)
 			setNotPrime(prime, j);
 	}
+	return pCount;
 } /* }}} */
 void writePrimes() { /* {{{ */
 	uint32_t x, y, cnt;
