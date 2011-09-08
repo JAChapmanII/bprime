@@ -45,6 +45,21 @@ int main(int argc, char **argv) {
 	width = height = 768;
 	torodial = 1;
 
+	/* Parse arguments as width, height, and not torodial {{{ */
+	if(argc > 1) {
+		width = height = atoi(argv[1]);
+		if(width <= 0)
+			width = height = 768;
+		if(argc > 2) {
+			height = atoi(argv[2]);
+			if(height <= 0)
+				height = 768;
+			if(argc > 3) {
+				torodial = 0;
+			}
+		}
+	} /* }}} */
+
 	setupConstants(width, height, torodial);
 
 	initSDL();
