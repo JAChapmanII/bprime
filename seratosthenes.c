@@ -126,8 +126,7 @@ int generatePrimes() { /* {{{ */
 		return;
 
 	prime = malloc(MEM_REQUIREMENT);
-	new   = malloc(MEM_REQUIREMENT);
-	if(!prime || !new) {
+	if(!prime) {
 		fprintf(stderr, "Could not allocate enough memory\n");
 		exit(1);
 	}
@@ -173,6 +172,15 @@ void writePrimes() { /* {{{ */
 int stepLife() { /* {{{ */
 	uint32_t x, y, cx, cy, totalAliveNow = 0;
 	char aliveCount;
+
+	if(!new) {
+		new = malloc(MEM_REQUIREMENT);
+		if(!new) {
+			fprintf(stderr, "Could not allocate enough memory to simulate!\n");
+			exit(1);
+		}
+	}
+
 	for(x = 0; x < PRIME_WIDTH; ++x) {
 		for(y = 0; y < PRIME_HEIGHT; ++y) {
 			aliveCount = 0;
