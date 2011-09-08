@@ -117,13 +117,15 @@ int main(int argc, char **argv) {
 
 	SDL_SaveBMP(screen, "out.bmp");
 	printf("Saved final output\n");
+
+	return 0;
 }
 
 
 int generatePrimes() { /* {{{ */
 	uint32_t i, j, pCount = 0;
 	if(prime != NULL)
-		return;
+		return -2;
 
 	prime = malloc(MEM_REQUIREMENT);
 	if(!prime) {
@@ -256,7 +258,7 @@ int stepLife() { /* {{{ */
 
 			setNotPrime(new, y*PRIME_WIDTH + x);
 			if(isPrime(prime, y*PRIME_WIDTH + x) &&
-					(aliveCount == 2) || (aliveCount == 3))
+					((aliveCount == 2) || (aliveCount == 3)))
 				setPrime(new, y*PRIME_WIDTH + x);
 			if(!isPrime(prime, y*PRIME_WIDTH + x) && (aliveCount == 3))
 				setPrime(new, y*PRIME_WIDTH + x);
