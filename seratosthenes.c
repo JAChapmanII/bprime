@@ -115,8 +115,10 @@ int main(int argc, char **argv) {
 	}
 	printf("Broken from game loop\n");
 
-	SDL_SaveBMP(screen, "out.bmp");
-	printf("Saved final output\n");
+	if(tAN != 0) {
+		SDL_SaveBMP(screen, "out.bmp");
+		printf("Saved final output to out.bmp\n");
+	}
 
 	return 0;
 }
