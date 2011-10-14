@@ -1,5 +1,5 @@
-LDFLAGS=
-CFLAGS=-pedantic -ansi -Wall -Wextra
+LDFLAGS=-pthread -lm
+CFLAGS=-pedantic -ansi -Wall -Wextra -g
 
 bprime: bprime.o
 	$(CC) -o $@ $^ $(LDFLAGS)
