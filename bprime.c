@@ -74,9 +74,9 @@ int main(int argc, char **argv) {
 void *crossOut(void *args);
 /* this is hard-coded in generatePrimes, anyway */
 size_t i = 0;
-#define THREAD_COUNT 8
+#define THREAD_COUNT 16
 size_t generatePrimes() { /* {{{ */
-	size_t pCount = 0, args[THREAD_COUNT << 1], m = sqrt(PRIME_COUNT) + 1, j;
+	size_t pCount = 0, args[THREAD_COUNT << 1], m = sqrt(PRIME_COUNT) + 1, j, s;
 	pthread_t threads[THREAD_COUNT];
 	if(prime != NULL)
 		return -2;
@@ -90,35 +90,15 @@ size_t generatePrimes() { /* {{{ */
 
 	printf("PRIME_COUNT: %ld\n", PRIME_COUNT);
 
+	s = (((PRIME_COUNT / THREAD_COUNT) >> 4) << 3);
+	for(j = 0; j < THREAD_COUNT; ++j) {
+		args[(j << 1) + 0] = j * s;
+		args[(j << 1) + 1] = j * s + s;
+		printf("t%ld: [%ld, %ld]\n", j, args[(j << 1)], args[(j << 1) + 1]);
+	}
 	args[0] = 0;
-	args[8] = (PRIME_COUNT >> 4) << 3;
+	args[(THREAD_COUNT << 1) - 1] = PRIME_COUNT;
 
-	args[4] = (args[8] >> 4) << 3;
-	args[12] = args[8] + args[4];
-
-	args[2] = (args[4] >> 4) << 3;
-	args[10] = args[8] + args[2];
-
-	args[6] = args[4] + args[2];
-	args[14] = args[12] + args[2];
-
-	args[ 1] = args[ 2];
-	args[ 3] = args[ 4];
-	args[ 5] = args[ 6];
-	args[ 7] = args[ 8];
-	args[ 9] = args[10];
-	args[11] = args[12];
-	args[13] = args[14];
-	args[15] = PRIME_COUNT;
-
-	printf("t1: [%ld, %ld]\n", args[ 0], args[ 1]);
-	printf("t2: [%ld, %ld]\n", args[ 2], args[ 3]);
-	printf("t3: [%ld, %ld]\n", args[ 4], args[ 5]);
-	printf("t4: [%ld, %ld]\n", args[ 6], args[ 7]);
-	printf("t5: [%ld, %ld]\n", args[ 8], args[ 9]);
-	printf("t6: [%ld, %ld]\n", args[10], args[11]);
-	printf("t7: [%ld, %ld]\n", args[12], args[13]);
-	printf("t8: [%ld, %ld]\n", args[14], args[15]);
 	printf("m: %ld\n", m);
 
 	for(i = 2; i < m; ++i) {
