@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 uint32_t PRIME_WIDTH, PRIME_HEIGHT, PRIME_COUNT, MEM_REQUIREMENT;
 
@@ -26,10 +27,9 @@ void setNotPrime(char *p, int x) {
 } /* }}} */
 
 int generatePrimes();
-void writePrimes();
 
 int main(int argc, char **argv) {
-	int pCount, width, height = width = 512;
+	int pCount, width, height = width = 512, i;
 
 	/* Parse arguments as width, and height {{{ */
 	if(argc > 1) {
@@ -48,9 +48,10 @@ int main(int argc, char **argv) {
 	pCount = generatePrimes();
 	printf("Generated initial prime set...\n");
 	printf("%d out of %d numbers were prime\n", pCount, PRIME_COUNT);
-
-	writePrimes();
-	printf("Saved prime grid to primes.rle\n");
+	for(i = width*height; i >= 0; --i)
+		if(isPrime(prime, i))
+			break;
+	printf("Biggest prime: %d\n", i);
 
 	return 0;
 }
@@ -65,8 +66,7 @@ int generatePrimes() { /* {{{ */
 		fprintf(stderr, "Could not allocate enough memory\n");
 		exit(1);
 	}
-	for(i = 0; i < PRIME_COUNT; ++i)
-		setPrime(prime, i);
+	memset(prime, 0xff, MEM_REQUIREMENT);
 
 	for(i = 2; i < PRIME_COUNT; ++i) {
 		if(!isPrime(prime, i))
@@ -76,33 +76,5 @@ int generatePrimes() { /* {{{ */
 			setNotPrime(prime, j);
 	}
 	return pCount;
-} /* }}} */
-void writePrimes() { /* {{{ */
-	uint32_t x, y, cnt;
-	char on;
-	FILE *f = fopen("primes.rle", "w");
-	if(!f) {
-		fprintf(stderr, "Could not open primes.rle for writing\n");
-		return;
-	}
-
-	fprintf(f, "x = %d, y = %d, rule = B3/S23\n", PRIME_WIDTH, PRIME_HEIGHT);
-	for(y = 0; y < PRIME_HEIGHT; ++y) {
-		for(x = 0; x < PRIME_WIDTH; ++x) {
-			on = isPrime(prime, y*PRIME_WIDTH + x);
-			for(cnt = 0; (x < PRIME_WIDTH) && (isPrime(prime, y*PRIME_WIDTH + x) == on); ++x)
-				cnt++;
-			if((x != PRIME_WIDTH - 1) || (isPrime(prime, y*PRIME_WIDTH + PRIME_WIDTH) != on))
-				--x;
-			if(cnt > 1)
-				fprintf(f, "%d%c", cnt, (on) ? 'o' : 'b');
-			else
-				fprintf(f, "%c", (on) ? 'o' : 'b');
-		}
-		fprintf(f, "$");
-	}
-	fprintf(f, "!\n");
-
-	fclose(f);
 } /* }}} */
 

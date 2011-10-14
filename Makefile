@@ -1,9 +1,9 @@
 LDFLAGS=
 CFLAGS=-pedantic -ansi -Wall -Wextra
 
-seratosthenes: seratosthenes.o
+bprime: bprime.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 clean:
-	rm -f *.o seratosthenes
+	rm -f *.o bprime
 
