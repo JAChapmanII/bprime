@@ -3,9 +3,9 @@
 #include <stdint.h>
 #include <string.h>
 
-uint32_t PRIME_WIDTH, PRIME_HEIGHT, PRIME_COUNT, MEM_REQUIREMENT;
+size_t PRIME_WIDTH, PRIME_HEIGHT, PRIME_COUNT, MEM_REQUIREMENT;
 
-void setupConstants(uint32_t width, uint32_t height) {
+void setupConstants(size_t width, size_t height) {
 	PRIME_WIDTH  = width;
 	PRIME_HEIGHT = height;
 	PRIME_COUNT = width * height;
@@ -15,21 +15,21 @@ void setupConstants(uint32_t width, uint32_t height) {
 char *prime = NULL;
 
 /* Functions to check/set/clear "prime"-ness {{{ */
-int isPrime(char *p, int x) {
+size_t isPrime(char *p, size_t x) {
 	return (p[x >> 3] & (0x1 << (x % 8))) >> (x % 8);
 }
-void setPrime(char *p, int x) {
+void setPrime(char *p, size_t x) {
 	p[x >> 3] |= (0x1 << (x % 8));
 }
-void setNotPrime(char *p, int x) {
+void setNotPrime(char *p, size_t x) {
 	if(isPrime(p, x))
 		p[x >> 3] -= (0x1 << (x % 8));
 } /* }}} */
 
-int generatePrimes();
+size_t generatePrimes();
 
 int main(int argc, char **argv) {
-	int pCount, width, height = width = 512, i;
+	size_t pCount, width, height = width = 512, i;
 
 	/* Parse arguments as width, and height {{{ */
 	if(argc > 1) {
@@ -47,17 +47,17 @@ int main(int argc, char **argv) {
 
 	pCount = generatePrimes();
 	printf("Generated initial prime set...\n");
-	printf("%d out of %d numbers were prime\n", pCount, PRIME_COUNT);
-	for(i = width*height; i >= 0; --i)
+	printf("%ld out of %ld numbers were prime\n", pCount, PRIME_COUNT);
+	for(i = width*height; i > 0; --i)
 		if(isPrime(prime, i))
 			break;
-	printf("Biggest prime: %d\n", i);
+	printf("Biggest prime: %ld\n", i);
 
 	return 0;
 }
 
-int generatePrimes() { /* {{{ */
-	uint32_t i, j, pCount = 0;
+size_t generatePrimes() { /* {{{ */
+	size_t i, j, pCount = 0;
 	if(prime != NULL)
 		return -2;
 
