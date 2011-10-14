@@ -74,9 +74,9 @@ int main(int argc, char **argv) {
 void *crossOut(void *args);
 /* this is hard-coded in generatePrimes, anyway */
 size_t i = 0;
-#define THREAD_COUNT 4
+#define THREAD_COUNT 8
 size_t generatePrimes() { /* {{{ */
-	size_t pCount = 0, args[THREAD_COUNT << 1], m = sqrt(PRIME_COUNT) + 1;
+	size_t pCount = 0, args[THREAD_COUNT << 1], m = sqrt(PRIME_COUNT) + 1, j;
 	pthread_t threads[THREAD_COUNT];
 	if(prime != NULL)
 		return -2;
@@ -91,20 +91,34 @@ size_t generatePrimes() { /* {{{ */
 	printf("PRIME_COUNT: %ld\n", PRIME_COUNT);
 
 	args[0] = 0;
-	args[4] = (PRIME_COUNT >> 4) << 3;
+	args[8] = (PRIME_COUNT >> 4) << 3;
+
+	args[4] = (args[8] >> 4) << 3;
+	args[12] = args[8] + args[4];
 
 	args[2] = (args[4] >> 4) << 3;
-	args[6] = args[4] + ((args[4] >> 4) << 3);
+	args[10] = args[8] + args[2];
 
-	args[1] = args[2];
-	args[3] = args[4];
-	args[5] = args[6];
-	args[7] = PRIME_COUNT;
+	args[6] = args[4] + args[2];
+	args[14] = args[12] + args[2];
 
-	printf("t1: [%ld, %ld]\n", args[0], args[1]);
-	printf("t2: [%ld, %ld]\n", args[2], args[3]);
-	printf("t3: [%ld, %ld]\n", args[4], args[5]);
-	printf("t4: [%ld, %ld]\n", args[6], args[7]);
+	args[ 1] = args[ 2];
+	args[ 3] = args[ 4];
+	args[ 5] = args[ 6];
+	args[ 7] = args[ 8];
+	args[ 9] = args[10];
+	args[11] = args[12];
+	args[13] = args[14];
+	args[15] = PRIME_COUNT;
+
+	printf("t1: [%ld, %ld]\n", args[ 0], args[ 1]);
+	printf("t2: [%ld, %ld]\n", args[ 2], args[ 3]);
+	printf("t3: [%ld, %ld]\n", args[ 4], args[ 5]);
+	printf("t4: [%ld, %ld]\n", args[ 6], args[ 7]);
+	printf("t5: [%ld, %ld]\n", args[ 8], args[ 9]);
+	printf("t6: [%ld, %ld]\n", args[10], args[11]);
+	printf("t7: [%ld, %ld]\n", args[12], args[13]);
+	printf("t8: [%ld, %ld]\n", args[14], args[15]);
 	printf("m: %ld\n", m);
 
 	for(i = 2; i < m; ++i) {
@@ -116,39 +130,18 @@ size_t generatePrimes() { /* {{{ */
 			continue;
 		pCount++;
 
-		if(pthread_create(&threads[0], NULL, crossOut, (void *)(&args[0]))) {
-			fprintf(stderr, "thread creation 0 failed!\n");
-			exit(1);
-		}
-		if(pthread_create(&threads[1], NULL, crossOut, (void *)(&args[2]))) {
-			fprintf(stderr, "thread creation 1 failed!\n");
-			exit(1);
-		}
-		if(pthread_create(&threads[2], NULL, crossOut, (void *)(&args[4]))) {
-			fprintf(stderr, "thread creation 2 failed!\n");
-			exit(1);
-		}
-		if(pthread_create(&threads[3], NULL, crossOut, (void *)(&args[6]))) {
-			fprintf(stderr, "thread creation 3 failed!\n");
-			exit(1);
-		}
+		for(j = 0; j < THREAD_COUNT; ++j)
+			if(pthread_create(&threads[j], NULL, crossOut, (void *)(&args[j << 1]))) {
+				fprintf(stderr, "thread creation %ld failed!\n", j);
+				exit(1);
+			}
 
-		if(pthread_join(threads[0], NULL)) {
-			fprintf(stderr, "thread 0 join failed\n");
-			exit(1);
-		}
-		if(pthread_join(threads[1], NULL)) {
-			fprintf(stderr, "thread 1 join failed\n");
-			exit(1);
-		}
-		if(pthread_join(threads[2], NULL)) {
-			fprintf(stderr, "thread 2 join failed\n");
-			exit(1);
-		}
-		if(pthread_join(threads[3], NULL)) {
-			fprintf(stderr, "thread 3 join failed\n");
-			exit(1);
-		}
+		for(j = 0; j < THREAD_COUNT; ++j)
+			if(pthread_join(threads[j], NULL)) {
+				fprintf(stderr, "thread %ld join failed\n", j);
+				exit(1);
+			}
+
 		/* TODO: destroy threads? */
 	}
 	if(m % 64 != 0)
