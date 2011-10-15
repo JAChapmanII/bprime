@@ -90,7 +90,7 @@ size_t generatePrimes() { /* {{{ */
 
 	printf("PRIME_COUNT: %ld\n", PRIME_COUNT);
 
-	s = (((PRIME_COUNT / THREAD_COUNT) >> 4) << 3);
+	s = (((PRIME_COUNT / THREAD_COUNT) >> 4) << 4);
 	for(j = 0; j < THREAD_COUNT; ++j) {
 		args[(j << 1) + 0] = j * s;
 		args[(j << 1) + 1] = j * s + s;
