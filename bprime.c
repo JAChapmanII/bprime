@@ -5,27 +5,23 @@
 #include <string.h>
 #include <pthread.h>
 
-size_t PRIME_WIDTH, PRIME_HEIGHT, PRIME_COUNT, MEM_REQUIREMENT;
-
-void setupConstants(size_t width, size_t height) {
-	PRIME_WIDTH  = width;
-	PRIME_HEIGHT = height;
-	PRIME_COUNT = width * height;
-	MEM_REQUIREMENT = ((PRIME_COUNT + 7) >> 3);
-}
-
+size_t PRIME_COUNT, MEM_REQUIREMENT;
 char *prime = NULL;
 
 /* Functions to check/set/clear "prime"-ness {{{ */
 size_t isPrime(char *p, size_t x) {
+	x = (x >> 1) - 1;
 	return (p[x >> 3] & (0x1 << (x % 8))) >> (x % 8);
 }
 void setPrime(char *p, size_t x) {
+	x = (x >> 1) - 1;
 	p[x >> 3] |= (0x1 << (x % 8));
 }
 void setNotPrime(char *p, size_t x) {
-	if(isPrime(p, x))
+	if(isPrime(p, x)) {
+		x = (x >> 1) - 1;
 		p[x >> 3] -= (0x1 << (x % 8));
+	}
 } /* }}} */
 
 /* */
@@ -44,39 +40,50 @@ size_t countSet(uint64_t x) {
 size_t generatePrimes();
 
 int main(int argc, char **argv) {
-	size_t pCount, width, height = width = 512, i;
+	size_t pCount, count = 512, i;
 
-	/* Parse arguments as width, and height {{{ */
+	/* Parse argument as square root of PRIME_COUNT {{{ */
 	if(argc > 1) {
-		height = width = atoi(argv[1]);
-		if(width <= 0)
-			width = height = 512;
-		if(argc > 2) {
-			height = atoi(argv[2]);
-			if(height <= 0)
-				height = 512;
-		}
+		count = atoi(argv[1]);
+		if(count <= 0)
+			count = 512;
 	} /* }}} */
-
-	setupConstants(width, height);
+	PRIME_COUNT = count * count;
+	/* We add 7 so we always round up to the nearest byte, then we divide by
+	 * 	8 to go from bits to bytes
+	 * 	2 to go from standard sieve to the 1st extension
+	 */
+	MEM_REQUIREMENT = (((PRIME_COUNT + 7) >> 3) + 1) >> 1;
+	/* Align to 8 bytes so our uint64_t thing works */
+	/*MEM_REQUIREMENT = ((MEM_REQUIREMENT + 7) >> 3) << 3;*/
+	printf("Prime count: %ld, bytes needed: %ld\n", PRIME_COUNT, MEM_REQUIREMENT);
 
 	pCount = generatePrimes();
 	printf("Generated initial prime set...\n");
 	printf("%ld out of %ld numbers were prime\n", pCount, PRIME_COUNT);
-	for(i = PRIME_COUNT; i > 0; --i)
+	for(i = PRIME_COUNT - 1; i > 2; i -= 2)
 		if(isPrime(prime, i))
 			break;
 	printf("Biggest prime: %ld\n", i);
+
+	pCount = 1;
+	/*printf("2 ");*/
+	for(i = 3; i < PRIME_COUNT; i += 2)
+		if(isPrime(prime, i)) {
+			/*printf("%ld ", i);*/
+			pCount++;
+		}
+	printf("\n%ld\n", pCount);
 
 	return 0;
 }
 
 void *crossOut(void *args);
-/* this is hard-coded in generatePrimes, anyway */
+
 size_t i = 0;
-#define THREAD_COUNT 16
+#define THREAD_COUNT 4
 size_t generatePrimes() { /* {{{ */
-	size_t pCount = 0, args[THREAD_COUNT << 1], m = sqrt(PRIME_COUNT) + 1, j, s;
+	size_t pCount = 1, args[THREAD_COUNT << 1], m = sqrt(PRIME_COUNT) + 1, j, s;
 	pthread_t threads[THREAD_COUNT];
 	if(prime != NULL)
 		return -2;
@@ -88,9 +95,8 @@ size_t generatePrimes() { /* {{{ */
 	}
 	memset(prime, 0xff, MEM_REQUIREMENT);
 
-	printf("PRIME_COUNT: %ld\n", PRIME_COUNT);
-
-	s = (((PRIME_COUNT / THREAD_COUNT) >> 4) << 4);
+	/* byte align boundaries between threads */
+	s = (((PRIME_COUNT / THREAD_COUNT + 7) >> 3) << 3);
 	for(j = 0; j < THREAD_COUNT; ++j) {
 		args[(j << 1) + 0] = j * s;
 		args[(j << 1) + 1] = j * s + s;
@@ -101,17 +107,14 @@ size_t generatePrimes() { /* {{{ */
 
 	printf("m: %ld\n", m);
 
-	for(i = 2; i < m; ++i) {
-		if(i % 10000 == 0) {
-			printf("%ld...\n", i);
-			fflush(stdout);
-		}
+	for(i = 3; i < m; i += 2) {
 		if(!isPrime(prime, i))
 			continue;
 		pCount++;
 
 		for(j = 0; j < THREAD_COUNT; ++j)
-			if(pthread_create(&threads[j], NULL, crossOut, (void *)(&args[j << 1]))) {
+			if(pthread_create(&threads[j], NULL,
+						crossOut, (void *)(&args[j << 1]))) {
 				fprintf(stderr, "thread creation %ld failed!\n", j);
 				exit(1);
 			}
@@ -124,13 +127,25 @@ size_t generatePrimes() { /* {{{ */
 
 		/* TODO: destroy threads? */
 	}
+	/* make our new max be a multiple of 64 (8 bytes) */
 	if(m % 64 != 0)
-		m = ((m + 64) >> 6) << 6;
-	for(; i < m; ++i)
+		m = ((m + 63) >> 6) << 6;
+	/* run through our remainder of individual numbers */
+	for(; i < m; i += 2) {
+		printf("Trying to count %ld\n", i);
 		if(isPrime(prime, i))
 			pCount++;
-	for(i >>= 6; i < PRIME_COUNT >> 6; ++i)
+	}
+	/* short method to sum up the the bits up to the last < 64b segment */
+	for(i >>= 6; i < (PRIME_COUNT >> 6); ++i) {
+		printf("quick summing %ld to %ld\n", i << 6, (i << 6) + 64);
 		pCount += countSet(((uint64_t *)prime)[i]);
+	}
+	for(i <<= 6, i++; i < PRIME_COUNT; i += 2) {
+		printf("Trying to count %ld\n", i);
+		if(isPrime(prime, i))
+			pCount++;
+	}
 	return pCount;
 } /* }}} */
 
@@ -148,7 +163,8 @@ void *crossOut(void *args) {
 	if(((size_t *)args)[1] < j)
 		return NULL;
 	for(; j < ((size_t *)args)[1]; j += i)
-		setNotPrime(prime, j);
+		if(j % 2)
+			setNotPrime(prime, j);
 	return NULL;
 }
 
