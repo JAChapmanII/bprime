@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
 void *crossOut(void *args);
 
 size_t i = 0;
-#define THREAD_COUNT 4
+#define THREAD_COUNT 16
 size_t generatePrimes() { /* {{{ */
 	size_t pCount = 1, args[THREAD_COUNT << 1], m = sqrt(PRIME_COUNT) + 1, j, s;
 	pthread_t threads[THREAD_COUNT];
@@ -101,6 +101,7 @@ size_t generatePrimes() { /* {{{ */
 		if(!isPrime(prime, i))
 			continue;
 
+		/* Start all our threads crossing out things in prime */
 		for(j = 0; j < THREAD_COUNT; ++j)
 			if(pthread_create(&threads[j], NULL,
 						crossOut, (void *)(&args[j << 1]))) {
@@ -108,13 +109,12 @@ size_t generatePrimes() { /* {{{ */
 				exit(1);
 			}
 
+		/* wait for all the threads to finish doing their job */
 		for(j = 0; j < THREAD_COUNT; ++j)
 			if(pthread_join(threads[j], NULL)) {
 				fprintf(stderr, "thread %ld join failed\n", j);
 				exit(1);
 			}
-
-		/* TODO: destroy threads? */
 	}
 	/* short method to sum up the the bits up to the last < 128b segment */
 	for(i = 0; i < ((PRIME_COUNT - 2) >> 7); ++i)
