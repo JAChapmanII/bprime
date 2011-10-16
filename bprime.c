@@ -110,7 +110,6 @@ size_t generatePrimes() { /* {{{ */
 	for(i = 3; i < m; i += 2) {
 		if(!isPrime(prime, i))
 			continue;
-		pCount++;
 
 		for(j = 0; j < THREAD_COUNT; ++j)
 			if(pthread_create(&threads[j], NULL,
@@ -127,21 +126,16 @@ size_t generatePrimes() { /* {{{ */
 
 		/* TODO: destroy threads? */
 	}
-	/* make our new max be a multiple of 64 (8 bytes) */
-	if(m % 64 != 0)
-		m = ((m + 63) >> 6) << 6;
-	/* run through our remainder of individual numbers */
-	for(; i < m; i += 2) {
-		printf("Trying to count %ld\n", i);
-		if(isPrime(prime, i))
-			pCount++;
-	}
 	/* short method to sum up the the bits up to the last < 64b segment */
-	for(i >>= 6; i < (PRIME_COUNT >> 6); ++i) {
-		printf("quick summing %ld to %ld\n", i << 6, (i << 6) + 64);
+	for(i = 0; i < ((PRIME_COUNT - 2) >> 7); ++i) {
+		printf("quick summing %ld to %ld\n", (i << 7) + 2, (i << 7) + 129);
 		pCount += countSet(((uint64_t *)prime)[i]);
 	}
-	for(i <<= 6, i++; i < PRIME_COUNT; i += 2) {
+	if(!i)
+		i = 3;
+	else
+		i <<= 7, i += 3;
+	for(; i < PRIME_COUNT; i += 2) {
 		printf("Trying to count %ld\n", i);
 		if(isPrime(prime, i))
 			pCount++;
