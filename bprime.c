@@ -54,9 +54,8 @@ int main(int argc, char **argv) {
 	 * 	2 to go from standard sieve to the 1st extension
 	 */
 	MEM_REQUIREMENT = (((PRIME_COUNT + 7) >> 3) + 1) >> 1;
-	/* Align to 8 bytes so our uint64_t thing works */
-	/*MEM_REQUIREMENT = ((MEM_REQUIREMENT + 7) >> 3) << 3;*/
-	printf("Prime count: %ld, bytes needed: %ld\n", PRIME_COUNT, MEM_REQUIREMENT);
+	printf("Prime count: %ld, bytes needed: %ld\n",
+			PRIME_COUNT, MEM_REQUIREMENT);
 
 	pCount = generatePrimes();
 	printf("Generated initial prime set...\n");
@@ -65,15 +64,6 @@ int main(int argc, char **argv) {
 		if(isPrime(prime, i))
 			break;
 	printf("Biggest prime: %ld\n", i);
-
-	pCount = 1;
-	/*printf("2 ");*/
-	for(i = 3; i < PRIME_COUNT; i += 2)
-		if(isPrime(prime, i)) {
-			/*printf("%ld ", i);*/
-			pCount++;
-		}
-	printf("\n%ld\n", pCount);
 
 	return 0;
 }
@@ -126,20 +116,19 @@ size_t generatePrimes() { /* {{{ */
 
 		/* TODO: destroy threads? */
 	}
-	/* short method to sum up the the bits up to the last < 64b segment */
-	for(i = 0; i < ((PRIME_COUNT - 2) >> 7); ++i) {
-		printf("quick summing %ld to %ld\n", (i << 7) + 2, (i << 7) + 129);
+	/* short method to sum up the the bits up to the last < 128b segment */
+	for(i = 0; i < ((PRIME_COUNT - 2) >> 7); ++i)
 		pCount += countSet(((uint64_t *)prime)[i]);
-	}
+	/* if i is 0, then we need to sum everything starting at 3 */
 	if(!i)
 		i = 3;
+	/* otherwise, we need to multiply by 128, then go 3 forward */
 	else
 		i <<= 7, i += 3;
-	for(; i < PRIME_COUNT; i += 2) {
-		printf("Trying to count %ld\n", i);
+	/* add up from i up to PRIME_COUNT individualy */
+	for(; i < PRIME_COUNT; i += 2)
 		if(isPrime(prime, i))
 			pCount++;
-	}
 	return pCount;
 } /* }}} */
 
