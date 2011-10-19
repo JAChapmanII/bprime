@@ -11,11 +11,7 @@ char *prime = NULL;
 /* Functions to check/set/clear "prime"-ness {{{ */
 size_t isPrime(char *p, size_t x) {
 	x = (x >> 1) - 1;
-	return (p[x >> 3] & (0x1 << (x % 8))) >> (x % 8);
-}
-void setPrime(char *p, size_t x) {
-	x = (x >> 1) - 1;
-	p[x >> 3] |= (0x1 << (x % 8));
+	return p[x >> 3] & (0x1 << (x % 8));
 }
 void setNotPrime(char *p, size_t x) {
 	if(isPrime(p, x)) {
