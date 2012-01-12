@@ -1,0 +1,15 @@
+Figure out which numbers are prime, up to some large number. Uses the Sieve of
+Eratosthene's, but I believe it is some extenision of it, looking at the
+calculation of MEM_REQUIREMENT, I would say the 1st extension which is stored
+in bit-packed bytes.
+
+Building:
+	make
+
+Running:
+	./bprime
+
+	Or,
+		./bprime <num>
+	determines primality of all integers up to num^2
+
